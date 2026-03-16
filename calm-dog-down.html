@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dog Calm-Down</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f5f5f2; color: #1a1a1a; padding: 2rem; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .sub { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+  .card { background: #fff; border: 1px solid #e0e0d8; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; max-width: 640px; }
+  .card-title { font-size: 12px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+  .name-row { display: flex; align-items: center; gap: 10px; }
+  .name-row label { font-size: 14px; color: #666; }
+  .name-input { border: 1px solid #ccc; border-radius: 8px; padding: 6px 12px; font-size: 15px; font-family: inherit; background: #fafaf8; color: #1a1a1a; width: 180px; }
+  .name-input:focus { outline: none; border-color: #888; }
+  .rec-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .phrase-input { flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 5px 10px; font-size: 13px; font-family: inherit; background: #fafaf8; color: #1a1a1a; min-width: 0; }
+  .phrase-input:focus { outline: none; border-color: #888; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 6px; background: #eee; color: #888; white-space: nowrap; }
+  .tag.ok { background: #e1f5ee; color: #0f6e56; }
+  button { border: 1px solid #ccc; background: #fff; color: #1a1a1a; font-size: 13px; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: inherit; transition: background 0.15s; white-space: nowrap; }
+  button:hover { background: #f5f5f2; }
+  button.recording { border-color: #E24B4A; color: #E24B4A; animation: pulse 0.6s infinite; }
+  button.primary { background: #f5f5f2; border-color: #bbb; font-size: 15px; padding: 10px 24px; }
+  button.active-sched { background: #e1f5ee; border-color: #0f6e56; color: #0f6e56; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
+  .slider-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .slider-row label { font-size: 13px; color: #666; width: 140px; flex-shrink: 0; }
+  .slider-row input[type=range] { flex: 1; }
+  .slider-row span { font-size: 13px; font-weight: 500; width: 40px; text-align: right; }
+  .meter-wrap { background: #eee; border-radius: 6px; height: 10px; overflow: hidden; margin: 8px 0 4px; }
+  .meter-bar { height: 10px; border-radius: 6px; width: 0%; transition: width 0.08s; background: #1D9E75; }
+  .meter-bar.loud { background: #E24B4A; }
+  .meter-label { font-size: 12px; color: #888; }
+  .status-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+  .dot.active { background: #1D9E75; animation: pulse 1s infinite; }
+  .dot.bark { background: #E24B4A; animation: pulse 0.4s infinite; }
+  .status-text { font-size: 13px; color: #666; }
+  .bark-flash { display: none; font-size: 13px; font-weight: 500; color: #E24B4A; margin-top: 6px; }
+  .bark-flash.show { display: block; }
+  .listen-row { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+  .playback-note { font-size: 12px; color: #999; margin-top: 8px; }
+  .log-stats { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .stat-box { background: #f5f5f2; border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 88px; }
+  .stat-num { font-size: 22px; font-weight: 500; }
+  .stat-lbl { font-size: 11px; color: #888; margin-top: 2px; }
+  canvas#barkChart { width: 100%; height: 160px; display: block; margin-bottom: 12px; }
+  .log-table-wrap { max-height: 180px; overflow-y: auto; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; color: #888; font-weight: 500; padding: 4px 8px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: #fff; }
+  td { padding: 4px 8px; border-bottom: 1px solid #f0f0ec; color: #444; }
+  tr:last-child td { border-bottom: none; }
+  .log-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .email-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .email-input { border: 1px solid #ccc; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-family: inherit; background: #fafaf8; color: #1a1a1a; flex: 1; min-width: 180px; }
+  .email-input:focus { outline: none; border-color: #888; }
+  .sched-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid #f0f0ec; }
+  .sched-row label { font-size: 13px; color: #666; }
+  .sched-select { border: 1px solid #ccc; border-radius: 8px; padding: 6px 10px; font-size: 13px; font-family: inherit; background: #fafaf8; color: #1a1a1a; }
+  .sched-status { font-size: 12px; color: #888; margin-top: 6px; }
+  .sched-status span { color: #0f6e56; font-weight: 500; }
+  .empty-log { font-size: 13px; color: #bbb; text-align: center; padding: 20px 0; }
+  .note { font-size: 12px; color: #aaa; margin-top: 6px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<h1 id="appTitle">Dog calm-down</h1>
+<p class="sub" id="appSub">Record your calming phrases, then start listening — plays back your voice when your dog barks, louder as they bark louder.</p>
+
+<!-- Dog name -->
+<div class="card">
+  <div class="card-title">Your dog's name</div>
+  <div class="name-row">
+    <label for="dogNameInput">Name:</label>
+    <input class="name-input" id="dogNameInput" type="text" placeholder="e.g. Cooper" maxlength="30">
+  </div>
+</div>
+
+<!-- Step 1: Phrases -->
+<div class="card">
+  <div class="card-title">Step 1 — record your phrases</div>
+  <div id="recList"></div>
+  <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+    <button id="addBtn">+ add phrase</button>
+    <span style="font-size:12px; color:#999;">type your own phrase in the box, then hit record</span>
+  </div>
+</div>
+
+<!-- Step 2: Settings -->
+<div class="card">
+  <div class="card-title">Step 2 — sensitivity &amp; response</div>
+  <div class="slider-row">
+    <label>Bark threshold</label>
+    <input type="range" min="5" max="80" value="30" step="1" id="threshSlider">
+    <span id="threshVal">30</span>
+  </div>
+  <div class="slider-row">
+    <label>Max response volume</label>
+    <input type="range" min="10" max="100" value="80" step="1" id="volSlider">
+    <span id="volVal">80%</span>
+  </div>
+  <div class="slider-row">
+    <label>Oscillation speed</label>
+    <input type="range" min="1" max="10" value="4" step="1" id="oscSlider">
+    <span id="oscVal">4</span>
+  </div>
+</div>
+
+<!-- Step 3: Listen -->
+<div class="card">
+  <div class="card-title">Step 3 — listen</div>
+  <div class="meter-wrap"><div class="meter-bar" id="meterBar"></div></div>
+  <div class="meter-label" id="meterLabel">mic level: —</div>
+  <div class="listen-row">
+    <button class="primary" id="listenBtn" disabled>start listening</button>
+    <div class="status-row">
+      <div class="dot" id="dot"></div>
+      <span class="status-text" id="statusText">not started</span>
+    </div>
+  </div>
+  <div class="bark-flash" id="barkFlash">bark detected — playing response</div>
+  <p class="playback-note">Make sure your speakers/headphones are on and volume is up.</p>
+</div>
+
+<!-- Bark log -->
+<div class="card">
+  <div class="card-title">Bark log</div>
+  <div class="log-stats">
+    <div class="stat-box"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">total barks</div></div>
+    <div class="stat-box"><div class="stat-num" id="statSession">0</div><div class="stat-lbl">this session</div></div>
+    <div class="stat-box"><div class="stat-num" id="statAvgLevel">—</div><div class="stat-lbl">avg level</div></div>
+    <div class="stat-box"><div class="stat-num" id="statAvgPitch">—</div><div class="stat-lbl">avg pitch Hz</div></div>
+  </div>
+  <canvas id="barkChart"></canvas>
+  <div class="log-table-wrap">
+    <div class="empty-log" id="emptyLog">No barks logged yet — start listening!</div>
+    <table id="logTable" style="display:none;">
+      <thead><tr><th>#</th><th>Time</th><th>Level</th><th>Pitch (Hz)</th><th>Phrase played</th></tr></thead>
+      <tbody id="logBody"></tbody>
+    </table>
+  </div>
+
+  <div class="log-actions">
+    <button id="exportJsonBtn" disabled>↓ export JSON</button>
+    <button id="exportCsvBtn" disabled>↓ export CSV</button>
+    <button id="clearLogBtn" disabled>clear log</button>
+  </div>
+
+  <!-- Manual email send -->
+  <div class="email-row">
+    <input class="email-input" id="emailInput" type="email" placeholder="your@email.com">
+    <button id="sendEmailBtn" disabled>send log now</button>
+  </div>
+
+  <!-- Scheduled reports -->
+  <div class="sched-row">
+    <label>Auto-report every</label>
+    <select class="sched-select" id="schedInterval">
+      <option value="1">1 min</option>
+      <option value="30" selected>30 min</option>
+      <option value="60">1 hour</option>
+      <option value="120">2 hours</option>
+      <option value="180">3 hours</option>
+    </select>
+    <button id="schedToggle" disabled>start schedule</button>
+  </div>
+  <div class="sched-status" id="schedStatus"></div>
+  <p class="note">Scheduled reports open your mail app automatically at each interval — keep this tab open and your email app running while you're away. For fully silent background sending without clicking, see the README comment in the source for a Node.js option.</p>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────
+const state = {
+  clips: [],
+  recording: false,
+  recIndex: -1,
+  mediaRec: null,
+  chunks: [],
+  micStream: null,
+  listening: false,
+  audioCtx: null,
+  analyser: null,
+  animId: null,
+  cooldown: false,
+  phraseIndex: 0,
+  sessionBarks: 0,
+  schedTimer: null,
+  schedActive: false,
+  schedNextTime: null,
+  schedCountdown: null
+};
+
+let barkLog = [];
+try { barkLog = JSON.parse(localStorage.getItem('barkLog') || '[]'); } catch(e) { barkLog = []; }
+function saveLog() { try { localStorage.setItem('barkLog', JSON.stringify(barkLog)); } catch(e) {} }
+
+// ── Dog name ──────────────────────────────────────────────
+const dogNameInput = document.getElementById('dogNameInput');
+function getDogName() { return dogNameInput.value.trim() || 'your dog'; }
+function defaultPhrases() {
+  const n = getDogName();
+  return [`${n}, stop`, `It's okay ${n}`, `Settle down, ${n}`];
+}
+dogNameInput.addEventListener('input', () => {
+  const n = getDogName();
+  const isNamed = n !== 'your dog';
+  document.getElementById('appTitle').textContent = isNamed ? `${n} calm-down` : 'Dog calm-down';
+  document.getElementById('appSub').textContent =
+    `Record your calming phrases, then start listening — plays back your voice when ${n} barks, louder as they bark louder.`;
+});
+
+// ── Phrase list ───────────────────────────────────────────
+function buildRecList() {
+  const list = document.getElementById('recList');
+  list.innerHTML = '';
+  state.clips.forEach((clip, i) => {
+    const row = document.createElement('div');
+    row.className = 'rec-row';
+    const inp = document.createElement('input');
+    inp.className = 'phrase-input'; inp.type = 'text'; inp.value = clip.label;
+    inp.placeholder = 'type your phrase…';
+    inp.oninput = () => { state.clips[i].label = inp.value; };
+    const tag = document.createElement('span');
+    tag.className = clip.url ? 'tag ok' : 'tag';
+    tag.textContent = clip.url ? 'recorded' : 'not recorded';
+    const recBtn = document.createElement('button');
+    recBtn.className = state.recording && state.recIndex === i ? 'recording' : '';
+    recBtn.textContent = state.recording && state.recIndex === i ? '⏹ stop' : '⏺ record';
+    recBtn.onclick = () => toggleRecord(i);
+    row.append(inp, tag, recBtn);
+    if (clip.url) {
+      const playBtn = document.createElement('button');
+      playBtn.textContent = '▶ play';
+      playBtn.onclick = () => new Audio(clip.url).play();
+      row.append(playBtn);
+    }
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '✕'; delBtn.style.padding = '6px 10px';
+    delBtn.onclick = () => { state.clips.splice(i, 1); buildRecList(); };
+    row.append(delBtn);
+    list.appendChild(row);
+  });
+  document.getElementById('listenBtn').disabled = !state.clips.some(c => c.url);
+}
+
+document.getElementById('addBtn').onclick = () => {
+  const phrases = defaultPhrases();
+  state.clips.push({ label: phrases[state.clips.length % phrases.length], url: null });
+  buildRecList();
+};
+
+// ── Recording ─────────────────────────────────────────────
+async function toggleRecord(i) {
+  if (state.recording && state.recIndex === i) { state.mediaRec.stop(); return; }
+  if (state.recording) state.mediaRec.stop();
+  state.recIndex = i; state.recording = true; state.chunks = [];
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  state.mediaRec = new MediaRecorder(stream);
+  state.mediaRec.ondataavailable = e => state.chunks.push(e.data);
+  state.mediaRec.onstop = () => {
+    stream.getTracks().forEach(t => t.stop());
+    const blob = new Blob(state.chunks, { type: 'audio/webm' });
+    if (state.clips[i].url) URL.revokeObjectURL(state.clips[i].url);
+    state.clips[i].url = URL.createObjectURL(blob);
+    state.recording = false;
+    buildRecList();
+  };
+  state.mediaRec.start();
+  buildRecList();
+}
+
+// ── Sliders ───────────────────────────────────────────────
+const threshSlider = document.getElementById('threshSlider');
+const volSlider    = document.getElementById('volSlider');
+const oscSlider    = document.getElementById('oscSlider');
+threshSlider.oninput = () => document.getElementById('threshVal').textContent = threshSlider.value;
+volSlider.oninput    = () => document.getElementById('volVal').textContent = volSlider.value + '%';
+oscSlider.oninput    = () => document.getElementById('oscVal').textContent = oscSlider.value;
+
+// ── Listen ────────────────────────────────────────────────
+document.getElementById('listenBtn').onclick = async () => {
+  state.listening ? stopListening() : await startListening();
+};
+
+async function startListening() {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  state.audioCtx = ctx;
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  state.micStream = stream;
+  const source = ctx.createMediaStreamSource(stream);
+  const analyser = ctx.createAnalyser();
+  // Larger FFT for better frequency resolution — critical for pitch
+  analyser.fftSize = 4096;
+  analyser.smoothingTimeConstant = 0.5;
+  source.connect(analyser);
+  state.analyser = analyser;
+  state.listening = true;
+  state.sessionBarks = 0;
+  document.getElementById('listenBtn').textContent = 'stop listening';
+  document.getElementById('dot').className = 'dot active';
+  document.getElementById('statusText').textContent = 'listening…';
+  loop();
+}
+
+function stopListening() {
+  state.listening = false;
+  if (state.animId) cancelAnimationFrame(state.animId);
+  if (state.micStream) state.micStream.getTracks().forEach(t => t.stop());
+  if (state.audioCtx) state.audioCtx.close();
+  state.audioCtx = null;
+  document.getElementById('listenBtn').textContent = 'start listening';
+  document.getElementById('listenBtn').disabled = false;
+  document.getElementById('dot').className = 'dot';
+  document.getElementById('statusText').textContent = 'stopped';
+  document.getElementById('meterBar').style.width = '0%';
+  document.getElementById('meterLabel').textContent = 'mic level: —';
+  document.getElementById('barkFlash').className = 'bark-flash';
+}
+
+// Level from frequency domain
+function getLevel() {
+  const data = new Uint8Array(state.analyser.frequencyBinCount);
+  state.analyser.getByteFrequencyData(data);
+  let sum = 0;
+  for (let k = 0; k < data.length; k++) sum += data[k];
+  return sum / data.length;
+}
+
+// Pitch via FFT peak — finds the bin with highest energy in the
+// 200–3000 Hz range (covers dog barks well, filters out low rumble)
+function getPitch() {
+  const sampleRate = state.audioCtx.sampleRate;
+  const binCount   = state.analyser.frequencyBinCount; // fftSize / 2
+  const data       = new Float32Array(binCount);
+  state.analyser.getFloatFrequencyData(data); // values in dB
+
+  const freqPerBin = sampleRate / (binCount * 2);
+  const minBin = Math.floor(200  / freqPerBin);
+  const maxBin = Math.floor(3000 / freqPerBin);
+
+  let peakBin = minBin, peakVal = -Infinity;
+  for (let b = minBin; b <= maxBin && b < binCount; b++) {
+    if (data[b] > peakVal) { peakVal = data[b]; peakBin = b; }
+  }
+
+  // Require a meaningful signal — if peak is very quiet, return null
+  if (peakVal < -60) return null;
+
+  // Parabolic interpolation for sub-bin accuracy
+  const prev = peakBin > 0        ? data[peakBin - 1] : data[peakBin];
+  const next = peakBin < binCount - 1 ? data[peakBin + 1] : data[peakBin];
+  const delta = (next - prev) / (2 * (2 * peakVal - prev - next) || 1);
+  const refinedBin = peakBin + delta;
+
+  return Math.round(refinedBin * freqPerBin);
+}
+
+function loop() {
+  if (!state.listening) return;
+  const level = getLevel();
+  const thresh = parseInt(threshSlider.value);
+  const pct = Math.min(100, (level / 80) * 100);
+  const bar = document.getElementById('meterBar');
+  bar.style.width = pct.toFixed(0) + '%';
+  bar.className = 'meter-bar' + (level > thresh ? ' loud' : '');
+  document.getElementById('meterLabel').textContent = 'mic level: ' + Math.round(level);
+  if (level > thresh && !state.cooldown) triggerResponse(level, thresh);
+  state.animId = requestAnimationFrame(loop);
+}
+
+// ── Playback + logging ────────────────────────────────────
+async function triggerResponse(level, thresh) {
+  state.cooldown = true;
+  document.getElementById('dot').className = 'dot bark';
+  document.getElementById('statusText').textContent = 'bark detected!';
+  document.getElementById('barkFlash').className = 'bark-flash show';
+
+  const recorded = state.clips.filter(c => c.url);
+  if (!recorded.length) { resetCooldown(); return; }
+
+  // Round-robin
+  state.phraseIndex = state.phraseIndex % recorded.length;
+  const clip = recorded[state.phraseIndex++];
+
+  const pitch     = getPitch();
+  const maxVol    = parseInt(volSlider.value) / 100;
+  const oscSpeed  = parseInt(oscSlider.value);
+  const intensity = Math.min(1, (level - thresh) / Math.max(1, 80 - thresh));
+  const targetVol = maxVol * (0.4 + 0.6 * intensity);
+
+  // Log it
+  barkLog.push({
+    id: barkLog.length + 1,
+    timestamp: new Date().toISOString(),
+    level: Math.round(level),
+    pitch: pitch,
+    phrase: clip.label
+  });
+  state.sessionBarks++;
+  saveLog();
+  updateLogUI();
+  updateSchedBtn(); // unlock schedule button once there's data
+
+  try {
+    const ctx = state.audioCtx;
+    const resp     = await fetch(clip.url);
+    const arrayBuf = await resp.arrayBuffer();
+    const audioBuf = await ctx.decodeAudioData(arrayBuf);
+    const src  = ctx.createBufferSource();
+    src.buffer = audioBuf;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(targetVol, ctx.currentTime);
+    const dur = audioBuf.duration;
+    const oscFreq = oscSpeed * 1.5;
+    const steps = Math.floor(dur * oscFreq * 2);
+    for (let s = 0; s <= steps; s++) {
+      const t = ctx.currentTime + (s / steps) * dur;
+      const v = targetVol * (0.55 + 0.45 * Math.sin((s / steps) * Math.PI * oscFreq * 2));
+      gain.gain.setValueAtTime(v, t);
+    }
+    src.connect(gain);
+    gain.connect(ctx.destination);
+    src.start();
+    src.onended = () => {
+      document.getElementById('barkFlash').className = 'bark-flash';
+      document.getElementById('dot').className = 'dot active';
+      document.getElementById('statusText').textContent = 'listening…';
+      setTimeout(() => { state.cooldown = false; }, 1500);
+    };
+  } catch(err) {
+    console.error('Playback error:', err);
+    resetCooldown();
+  }
+}
+
+function resetCooldown() {
+  document.getElementById('barkFlash').className = 'bark-flash';
+  document.getElementById('dot').className = 'dot active';
+  document.getElementById('statusText').textContent = 'listening…';
+  setTimeout(() => { state.cooldown = false; }, 2000);
+}
+
+// ── Log UI ────────────────────────────────────────────────
+function updateLogUI() {
+  document.getElementById('statTotal').textContent = barkLog.length;
+  document.getElementById('statSession').textContent = state.sessionBarks;
+  const levels = barkLog.map(e => e.level);
+  document.getElementById('statAvgLevel').textContent =
+    levels.length ? Math.round(levels.reduce((a,b)=>a+b,0)/levels.length) : '—';
+  const pitches = barkLog.map(e => e.pitch).filter(Boolean);
+  document.getElementById('statAvgPitch').textContent =
+    pitches.length ? Math.round(pitches.reduce((a,b)=>a+b,0)/pitches.length) : '—';
+  const hasData = barkLog.length > 0;
+  document.getElementById('emptyLog').style.display = hasData ? 'none' : 'block';
+  document.getElementById('logTable').style.display = hasData ? 'table' : 'none';
+  ['exportJsonBtn','exportCsvBtn','clearLogBtn','sendEmailBtn'].forEach(id => {
+    document.getElementById(id).disabled = !hasData;
+  });
+  const tbody = document.getElementById('logBody');
+  tbody.innerHTML = '';
+  barkLog.slice(-50).reverse().forEach(e => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${e.id}</td><td>${new Date(e.timestamp).toLocaleTimeString()}</td><td>${e.level}</td><td>${e.pitch != null ? e.pitch + ' Hz' : '—'}</td><td>${e.phrase}</td>`;
+    tbody.appendChild(tr);
+  });
+  drawChart();
+}
+
+function drawChart() {
+  const canvas = document.getElementById('barkChart');
+  const ctx2 = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 580;
+  const H = 160;
+  canvas.width = W; canvas.height = H;
+  ctx2.clearRect(0, 0, W, H);
+  if (!barkLog.length) return;
+  const show = barkLog.slice(-60);
+  const maxLevel = Math.max(...show.map(e => e.level), 1);
+  const barW = Math.max(2, (W - 20) / show.length - 2);
+  const padL = 10, padB = 20, padT = 10;
+  const chartH = H - padB - padT;
+  ctx2.strokeStyle = '#ddd'; ctx2.lineWidth = 0.5;
+  ctx2.beginPath(); ctx2.moveTo(padL, padT); ctx2.lineTo(padL, H - padB); ctx2.lineTo(W - 10, H - padB); ctx2.stroke();
+  ctx2.fillStyle = '#aaa'; ctx2.font = '10px system-ui';
+  ctx2.fillText('bark level (last 60)', padL + 4, padT + 9);
+  show.forEach((e, i) => {
+    const x = padL + i * (barW + 2);
+    const bh = (e.level / maxLevel) * chartH;
+    const y = padT + chartH - bh;
+    const ratio = e.level / maxLevel;
+    ctx2.fillStyle = `rgb(${Math.round(30+ratio*200)},${Math.round(158-ratio*100)},${Math.round(74-ratio*50)})`;
+    ctx2.fillRect(x, y, barW, bh);
+  });
+  if (show.length > 1) {
+    ctx2.fillStyle = '#aaa'; ctx2.font = '10px system-ui';
+    ctx2.fillText(new Date(show[0].timestamp).toLocaleTimeString(), padL, H - 4);
+    ctx2.fillText(new Date(show[show.length-1].timestamp).toLocaleTimeString(), W - 72, H - 4);
+  }
+}
+
+// ── Email helpers ─────────────────────────────────────────
+function buildEmailBody(label) {
+  const dog = getDogName();
+  const avgL = document.getElementById('statAvgLevel').textContent;
+  const avgP = document.getElementById('statAvgPitch').textContent;
+  // Only include barks since last report for scheduled sends
+  const entries = label === 'scheduled' && state.lastReportIndex != null
+    ? barkLog.slice(state.lastReportIndex)
+    : barkLog;
+  const lines = [
+    `${label === 'scheduled' ? 'Scheduled bark report' : 'Bark log'} for ${dog}`,
+    `Generated: ${new Date().toLocaleString()}`,
+    `Total barks all time: ${barkLog.length}  |  This report: ${entries.length}  |  Avg level: ${avgL}  |  Avg pitch: ${avgP} Hz`,
+    ``,
+    `Entries in this report:`,
+    ...entries.map(e => `  #${e.id}  ${new Date(e.timestamp).toLocaleTimeString()}  level:${e.level}  pitch:${e.pitch != null ? e.pitch+'Hz' : '—'}  "${e.phrase}"`),
+    ``,
+    `--- Full JSON ---`,
+    JSON.stringify(barkLog, null, 2)
+  ];
+  return lines.join('\n');
+}
+
+function sendEmail(label) {
+  const email = document.getElementById('emailInput').value.trim();
+  if (!email) { alert('Enter an email address first.'); return false; }
+  const dog = getDogName();
+  const subject = encodeURIComponent(`${dog} bark report — ${new Date().toLocaleTimeString()}`);
+  const body = encodeURIComponent(buildEmailBody(label));
+  window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+  state.lastReportIndex = barkLog.length; // mark where this report ended
+  return true;
+}
+
+document.getElementById('sendEmailBtn').onclick = () => sendEmail('manual');
+
+// ── Scheduled reports ─────────────────────────────────────
+function updateSchedBtn() {
+  const btn = document.getElementById('schedToggle');
+  const hasEmail = document.getElementById('emailInput').value.trim().length > 0;
+  btn.disabled = !hasEmail;
+}
+
+document.getElementById('emailInput').addEventListener('input', updateSchedBtn);
+
+document.getElementById('schedToggle').onclick = () => {
+  if (state.schedActive) {
+    stopSchedule();
+  } else {
+    startSchedule();
+  }
+};
+
+function startSchedule() {
+  const email = document.getElementById('emailInput').value.trim();
+  if (!email) { alert('Enter an email address first.'); return; }
+  const mins = parseInt(document.getElementById('schedInterval').value);
+  const ms   = mins * 60 * 1000;
+  state.schedActive = true;
+  state.lastReportIndex = barkLog.length;
+  state.schedNextTime = Date.now() + ms;
+
+  // Fire at each interval
+  state.schedTimer = setInterval(() => {
+    sendEmail('scheduled');
+    state.schedNextTime = Date.now() + ms;
+  }, ms);
+
+  // Countdown display — updates every second
+  state.schedCountdown = setInterval(updateCountdown, 1000);
+
+  const btn = document.getElementById('schedToggle');
+  btn.textContent = 'stop schedule';
+  btn.className = 'active-sched';
+  updateCountdown();
+}
+
+function stopSchedule() {
+  clearInterval(state.schedTimer);
+  clearInterval(state.schedCountdown);
+  state.schedActive = false;
+  state.schedTimer = null;
+  state.schedCountdown = null;
+  state.schedNextTime = null;
+  document.getElementById('schedToggle').textContent = 'start schedule';
+  document.getElementById('schedToggle').className = '';
+  document.getElementById('schedStatus').innerHTML = '';
+}
+
+function updateCountdown() {
+  if (!state.schedActive || !state.schedNextTime) return;
+  const remaining = Math.max(0, state.schedNextTime - Date.now());
+  const m = Math.floor(remaining / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('schedStatus').innerHTML =
+    `Schedule active — next report in <span>${pad(m)}:${pad(s)}</span>`;
+}
+
+// ── Exports ───────────────────────────────────────────────
+document.getElementById('exportJsonBtn').onclick = () => {
+  dl(new Blob([JSON.stringify(barkLog, null, 2)], {type:'application/json'}), `${getDogName()}-barks-${dateStr()}.json`);
+};
+document.getElementById('exportCsvBtn').onclick = () => {
+  const rows = [['id','timestamp','level','pitch_hz','phrase'],
+    ...barkLog.map(e => [e.id, e.timestamp, e.level, e.pitch != null ? e.pitch : '', e.phrase])];
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  dl(new Blob([csv],{type:'text/csv'}), `${getDogName()}-barks-${dateStr()}.csv`);
+};
+document.getElementById('clearLogBtn').onclick = () => {
+  if (confirm('Clear all bark history?')) {
+    barkLog = []; state.sessionBarks = 0;
+    saveLog(); updateLogUI();
+  }
+};
+
+function dl(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+function dateStr() { return new Date().toISOString().slice(0,10); }
+
+// ── Init ──────────────────────────────────────────────────
+buildRecList();
+updateLogUI();
+updateSchedBtn();
+window.addEventListener('resize', drawChart);
+
+/*
+  README — fully automatic background sending (no click required):
+  The mailto: approach requires your mail app to be open and will prompt
+  you to confirm each send. For silent background delivery while you're
+  away, run this tiny Node.js companion script instead:
+
+  1. npm install nodemailer
+  2. Save as send-report.js and run: node send-report.js
+
+  --- send-report.js ---
+  const nodemailer = require('nodemailer');
+  const fs = require('fs');
+  const INTERVAL_MINS = 30;
+  const TO   = 'you@example.com';
+  const FROM = 'you@gmail.com';
+  const PASS = 'your-app-password'; // Gmail app password
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail', auth: { user: FROM, pass: PASS }
+  });
+
+  setInterval(() => {
+    const log = JSON.parse(fs.readFileSync('barkLog.json', 'utf8'));
+    transporter.sendMail({
+      from: FROM, to: TO,
+      subject: `Cooper bark report — ${new Date().toLocaleTimeString()}`,
+      text: JSON.stringify(log, null, 2)
+    });
+  }, INTERVAL_MINS * 60 * 1000);
+  ---
+  The HTML page saves barkLog to localStorage — to bridge to Node,
+  add a small localStorage→file sync using the File System Access API
+  or just export JSON manually and drop it in the same folder.
+*/
+</script>
+</body>
+</html>
