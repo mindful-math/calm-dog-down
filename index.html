@@ -202,8 +202,8 @@ tr:last-child td { border-bottom: none; }
   <div class="card-title">Step 1 — voice setup</div>
 
   <div class="tab-row">
-    <button class="tab on" data-tab="record">⏺ record phrases</button>
-    <button class="tab" data-tab="clone">✦ ai voice clone</button>
+    <button class="tab on" data-tab="record">record phrases</button>
+    <button class="tab" data-tab="clone">ai voice clone</button>
   </div>
 
   <!-- Record tab -->
@@ -215,30 +215,42 @@ tr:last-child td { border-bottom: none; }
     </div>
   </div>
 
-  <!-- AI Clone tab -->
-  <div class="tab-panel" id="tab-clone">
-    <div class="col">
-      <div class="row">
-        <label style="width:120px;">ElevenLabs key:</label>
-        <input type="password" id="elevenKey" placeholder="sk-..." style="flex:1;" autocomplete="off">
-        <button id="testKeyBtn">test</button>
-      </div>
+   <!-- AI Clone tab -->
+   <div class="tab-panel" id="tab-clone">
+     <div class="col">
+       <div class="row" style="margin-bottom:12px;">
+         <label style="width:120px;">TTS Provider:</label>
+         <select id="ttsProvider" style="flex:1;">
+           <option value="eleven">ElevenLabs (Paid/High Quality)</option>
+           <option value="google" selected>Google Translate (Free)</option>
+         </select>
+       </div>
+       <div class="row" id="row-eleven-key">
+         <label style="width:120px;">ElevenLabs key:</label>
+         <input type="password" id="elevenKey" placeholder="sk_..." style="flex:1;" autocomplete="off">
+         <button id="testKeyBtn">test</button>
+       </div>
+       <div class="row" style="margin-top:8px;">
+         <label style="width:120px;">Groq API key:</label>
+         <input type="password" id="groqKey" placeholder="gsk_..." style="flex:1;" autocomplete="off">
+         <button id="testGroqKeyBtn">test</button>
+       </div>
       <p class="api-key-note">Key stored in-memory only (never persisted). Get one free at elevenlabs.io</p>
       <hr class="divider">
-      <div class="row">
-        <label style="width:120px;">Voice sample:</label>
-        <button id="sampleRecBtn">⏺ record sample</button>
-        <span class="phrase-tag" id="sampleTag">not recorded</span>
-        <button id="samplePlayBtn" style="display:none;">▶ play</button>
-      </div>
-      <p class="api-key-note">Record ≥30 s of your voice for best clone quality. Speak naturally.</p>
       <div class="row" style="margin-top:8px;">
         <label style="width:120px;">Custom phrases:</label>
-        <textarea id="customPhrases" rows="3" style="flex:1; background:#111110; border:1px solid var(--border); border-radius:8px; padding:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:12px; resize:vertical;" placeholder="one phrase per line&#10;leave empty for auto-generated phrases"></textarea>
+        <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+           <textarea id="customPhrases" rows="3" style="width:100%; background:#111110; border:1px solid var(--border); border-radius:8px; padding:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:12px; resize:vertical;" placeholder="one phrase per line&#10;leave empty for auto-generated phrases"></textarea>
+           <button id="groqBtn" style="align-self:flex-start; font-size:10px; padding:4px 8px;">Groq suggest</button>
+         </div>
       </div>
-      <div class="row">
-        <button id="cloneBtn" disabled>✦ clone + generate</button>
-        <span class="phrase-tag" id="cloneStatus">—</span>
+       <div class="row" style="margin-top:8px;" id="row-eleven-voice">
+         <label style="width:120px;">Voice ID:</label>
+         <input type="text" id="elevenVoiceId" placeholder="voice id" style="flex:1;">
+       </div>
+      <div class="row" style="margin-top:8px;">
+        <button id="cloneBtn" class="primary">clone voice</button>
+        <span id="cloneStatus" class="phrase-tag"></span>
       </div>
     </div>
   </div>
@@ -275,7 +287,7 @@ tr:last-child td { border-bottom: none; }
   <div class="meter-wrap"><div class="meter-bar" id="meterBar"></div></div>
   <div class="meter-label" id="meterLabel">mic level: —</div>
   <div class="row" style="margin-top:12px;">
-    <button class="primary" id="listenBtn" disabled>▶ start listening</button>
+    <button class="primary" id="listenBtn">start listening</button>
     <div class="status-row">
       <div class="dot" id="dot"></div>
       <span class="status-text" id="statusText">not started</span>
@@ -311,9 +323,9 @@ tr:last-child td { border-bottom: none; }
   </div>
 
   <div class="row" style="margin-top:10px; gap:8px; flex-wrap:wrap;">
-    <button id="exportJsonBtn" disabled>↓ json</button>
-    <button id="exportCsvBtn" disabled>↓ csv</button>
-    <button id="exportImgBtn" disabled>↓ chart png</button>
+    <button id="exportJsonBtn" disabled>export json</button>
+    <button id="exportCsvBtn" disabled>export csv</button>
+    <button id="exportImgBtn" disabled>export chart png</button>
     <button id="clearLogBtn" class="danger" disabled>clear</button>
   </div>
 </div>
@@ -323,8 +335,8 @@ tr:last-child td { border-bottom: none; }
   <div class="card-title">Notifications &amp; reports</div>
 
   <div class="notify-method">
-    <button class="method-btn on" data-method="local" id="methodLocal">⚡ local server</button>
-    <button class="method-btn" data-method="sms" id="methodSms">📱 sms (twilio)</button>
+    <button class="method-btn on" data-method="local" id="methodLocal">local server</button>
+    <button class="method-btn" data-method="sms" id="methodSms">sms (twilio)</button>
   </div>
 
   <!-- Local server panel -->
@@ -388,7 +400,6 @@ tr:last-child td { border-bottom: none; }
 const S = {
   clips: [],            // {label, url, blob, isAI}
   recording: false, recIndex: -1, mediaRec: null, chunks: [],
-  sampleRecording: false, sampleChunks: [], sampleBlob: null, sampleUrl: null, sampleMediaRec: null,
   micStream: null,
   listening: false,
   audioCtx: null, analyser: null, animId: null,
@@ -409,8 +420,20 @@ const S = {
 };
 
 let barkLog = [];
-try { barkLog = JSON.parse(localStorage.getItem('barkLog7') || '[]'); } catch(e) {}
 function saveLog() { try { localStorage.setItem('barkLog7', JSON.stringify(barkLog)); } catch(e) {} }
+
+async function initLog() {
+  const cached = localStorage.getItem('barkLog7');
+  if (cached) {
+    if (confirm('Found cached bark history. Load it?')) {
+      try {
+        barkLog = JSON.parse(cached);
+      } catch(e) {
+        console.error('Failed to parse cache', e);
+      }
+    }
+  }
+}
 
 // Restore bandit state
 try { S.bandit = JSON.parse(localStorage.getItem('banditState') || '{}'); } catch(e) {}
@@ -419,10 +442,16 @@ function saveBandit() { try { localStorage.setItem('banditState', JSON.stringify
 // DOG NAME
 const dogNameInput = document.getElementById('dogNameInput');
 function getDogName() { return dogNameInput.value.trim() || 'your dog'; }
-dogNameInput.addEventListener('input', () => {
+
+function updateTitle() {
   const n = getDogName();
   document.getElementById('titleEl').innerHTML = n !== 'your dog'
     ? `<em>${n}</em> calm down` : `Dog <em>calm down</em>`;
+}
+
+dogNameInput.addEventListener('input', async () => {
+  updateTitle();
+  await loadPhrases();
 });
 
 function defaultPhrases() {
@@ -472,20 +501,20 @@ function buildRecList() {
     if (!clip.isAI) {
       const recBtn = document.createElement('button');
       recBtn.className = S.recording && S.recIndex === i ? 'recording' : '';
-      recBtn.textContent = S.recording && S.recIndex === i ? '⏹' : '⏺';
+      recBtn.textContent = S.recording && S.recIndex === i ? 'stop' : 'record';
       recBtn.title = 'record';
       recBtn.onclick = () => toggleRecord(i);
       btns.push(recBtn);
     }
     if (clip.url) {
       const playBtn = document.createElement('button');
-      playBtn.textContent = '▶'; playBtn.title = 'play';
+      playBtn.textContent = 'play'; playBtn.title = 'play';
       playBtn.onclick = () => new Audio(clip.url).play();
       btns.push(playBtn);
     }
     const delBtn = document.createElement('button');
-    delBtn.textContent = '✕'; delBtn.title = 'remove';
-    delBtn.onclick = () => { S.clips.splice(i, 1); buildRecList(); updateListenBtn(); };
+    delBtn.textContent = 'remove'; delBtn.title = 'remove';
+    delBtn.onclick = () => { S.clips.splice(i, 1); buildRecList(); };
     btns.push(delBtn);
     row.append(txt, tag, meta, ...btns);
     list.appendChild(row);
@@ -500,7 +529,9 @@ document.getElementById('addBtn').onclick = () => {
 };
 
 function updateListenBtn() {
-  document.getElementById('listenBtn').disabled = !S.clips.some(c => c.url);
+  // Enable if we have any phrases at all, so the user can at least start the mic.
+  // We'll handle the "no audio" case when a bark actually occurs.
+  document.getElementById('listenBtn').disabled = S.clips.length === 0;
 }
 
 // RECORDING
@@ -511,51 +542,134 @@ async function toggleRecord(i) {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   S.mediaRec = new MediaRecorder(stream);
   S.mediaRec.ondataavailable = e => S.chunks.push(e.data);
-  S.mediaRec.onstop = () => {
+  S.mediaRec.onstop = async () => {
     stream.getTracks().forEach(t => t.stop());
     const blob = new Blob(S.chunks, { type: 'audio/webm' });
     if (S.clips[i].url) URL.revokeObjectURL(S.clips[i].url);
     S.clips[i].url = URL.createObjectURL(blob);
     S.clips[i].blob = blob;
     S.recording = false;
+    
+    // Persist audio to server
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = async () => {
+        const base64data = reader.result.split(',')[1];
+        const filename = `${getDogName().replace(/\s+/g,'-')}-${i}.webm`;
+        await fetch('http://localhost:3747/audio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename, data: base64data })
+        });
+      };
+    } catch(e) { console.error('Audio save failed', e); }
+
     buildRecList();
   };
   S.mediaRec.start();
   buildRecList();
 }
 
-// VOICE SAMPLE (for cloning)
-const sampleRecBtn = document.getElementById('sampleRecBtn');
-const sampleTag    = document.getElementById('sampleTag');
-const samplePlayBtn = document.getElementById('samplePlayBtn');
-
-sampleRecBtn.onclick = async () => {
-  if (S.sampleRecording) { S.sampleMediaRec.stop(); return; }
-  S.sampleRecording = true; S.sampleChunks = [];
-  sampleRecBtn.className = 'recording';
-  sampleRecBtn.textContent = '⏹ stop sample';
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  S.sampleMediaRec = new MediaRecorder(stream);
-  S.sampleMediaRec.ondataavailable = e => S.sampleChunks.push(e.data);
-  S.sampleMediaRec.onstop = () => {
-    stream.getTracks().forEach(t => t.stop());
-    S.sampleBlob = new Blob(S.sampleChunks, { type: 'audio/webm' });
-    S.sampleUrl = URL.createObjectURL(S.sampleBlob);
-    S.sampleRecording = false;
-    sampleRecBtn.className = '';
-    sampleRecBtn.textContent = '⏺ re-record';
-    sampleTag.textContent = 'recorded ✓';
-    sampleTag.className = 'phrase-tag ok';
-    samplePlayBtn.style.display = '';
-    document.getElementById('cloneBtn').disabled = false;
-  };
-  S.sampleMediaRec.start();
-};
-
-samplePlayBtn.onclick = () => { if (S.sampleUrl) new Audio(S.sampleUrl).play(); };
 
 // AI VOICE CLONE (ElevenLabs)
 // FIXME: this boy is broken right now...
+let S_config = {};
+
+document.getElementById('groqBtn').onclick = async () => {
+  const key = document.getElementById('groqKey').value.trim() || S_config.groqApiKey;
+  if (!key) { alert('Groq API key not configured in .env or UI'); return; }
+
+  const name = getDogName();
+  const btn = document.getElementById('groqBtn');
+  const originalText = btn.textContent;
+  btn.textContent = 'thinking...';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch('http://localhost:3747/suggest-phrases', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dogName: name, apiKey: key })
+    });
+
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}));
+      throw new Error(errData.error || `Server error: ${resp.status}`);
+    }
+
+    const content = await resp.text();
+    document.getElementById('customPhrases').value = content;
+  } catch (err) {
+    console.error(err);
+    alert('Groq suggestion failed: ' + err.message);
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+};
+async function loadConfig() {
+  try {
+    const r = await fetch('http://localhost:3747/config');
+    if (r.ok) {
+      S_config = await r.json();
+      if (S_config.elevenLabsKey) document.getElementById('elevenKey').value = S_config.elevenLabsKey;
+      if (S_config.groqApiKey) document.getElementById('groqKey').value = S_config.groqApiKey;
+      if (S_config.voiceId) document.getElementById('elevenVoiceId').value = S_config.voiceId;
+      if (S_config.smtpUser) document.getElementById('emailInput').value = S_config.smtpUser;
+    }
+  } catch(e) { console.error('Config load failed', e); }
+  updateNotifyBtns();
+}
+
+// Initialize config on load
+window.addEventListener('DOMContentLoaded', () => {
+  const providerSelect = document.getElementById('ttsProvider');
+  const elevenKeyRow = document.getElementById('row-eleven-key');
+  const elevenVoiceRow = document.getElementById('row-eleven-voice');
+  
+  const updateProviderUI = () => {
+    const isEleven = providerSelect.value === 'eleven';
+    elevenKeyRow.style.display = isEleven ? 'flex' : 'none';
+    elevenVoiceRow.style.display = isEleven ? 'flex' : 'none';
+  };
+  
+  providerSelect.addEventListener('change', updateProviderUI);
+  updateProviderUI();
+});
+
+async function loadPhrases() {
+  const name = getDogName();
+  try {
+    const r = await fetch(`http://localhost:3747/phrases?dog=${encodeURIComponent(name)}`);
+    if (r.ok) {
+      const phrases = await r.json();
+      if (phrases && phrases.length) {
+        let changed = false;
+        for (const p of phrases) {
+          let clip = S.clips.find(c => c.label === p);
+          if (!clip) {
+            clip = { label: p, url: null, isAI: true };
+            S.clips.push(clip);
+            changed = true;
+          }
+          
+          // Try to load corresponding audio from server
+          const filename = `${name.replace(/\s+/g,'-')}-${S.clips.indexOf(clip)}.webm`;
+          const audioR = await fetch(`http://localhost:3747/audio?filename=${encodeURIComponent(filename)}`);
+          if (audioR.ok) {
+            const blob = await audioR.blob();
+            clip.url = URL.createObjectURL(blob);
+            clip.blob = blob;
+            changed = true;
+          }
+        }
+        if (changed) buildRecList();
+      }
+    }
+  } catch(e) { console.error('Phrases load failed', e); }
+}
+
 document.getElementById('testKeyBtn').onclick = async () => {
   const key = document.getElementById('elevenKey').value.trim();
   if (!key) return;
@@ -565,56 +679,73 @@ document.getElementById('testKeyBtn').onclick = async () => {
   } catch(e) { alert('Network error — is your key correct?'); }
 };
 
-document.getElementById('cloneBtn').onclick = async () => {
-  const key = document.getElementById('elevenKey').value.trim();
-  if (!key) { alert('Enter your ElevenLabs API key first.'); return; }
-  if (!S.sampleBlob) { alert('Record a voice sample first.'); return; }
+document.getElementById('testGroqKeyBtn').onclick = async () => {
+  const key = document.getElementById('groqKey').value.trim();
+  if (!key) return;
+  try {
+    const resp = await fetch('http://localhost:3747/test-groq-key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey: key })
+    });
+    const data = await resp.json();
+    alert(data.ok ? 'Groq Key valid' : 'Invalid Groq key: ' + (data.error || 'unknown error'));
+  } catch(e) { alert('Network error — is your key correct?'); }
+};
 
+document.getElementById('cloneBtn').onclick = async () => {
+  const provider = document.getElementById('ttsProvider').value;
   const cloneStatus = document.getElementById('cloneStatus');
-  cloneStatus.textContent = 'uploading voice…';
+  cloneStatus.textContent = 'generating phrases…';
   cloneStatus.className = 'phrase-tag';
 
   try {
-    // 1. Create instant voice clone
-    const fd = new FormData();
-    fd.append('name', `${getDogName()}-calm-${Date.now()}`);
-    fd.append('files', S.sampleBlob, 'sample.webm');
-    const cloneResp = await fetch('https://api.elevenlabs.io/v1/voices/add', {
-      method: 'POST',
-      headers: { 'xi-api-key': key },
-      body: fd
-    });
-    if (!cloneResp.ok) throw new Error('Clone failed: ' + await cloneResp.text());
-    const { voice_id } = await cloneResp.json();
-    S.elevenVoiceId = voice_id;
-    cloneStatus.textContent = 'generating phrases…';
-
-    // 2. Build phrase list
+    // 1. Build phrase list
     const customRaw = document.getElementById('customPhrases').value.trim();
     const phrasesToGen = customRaw
       ? customRaw.split('\n').map(s => s.trim()).filter(Boolean)
       : generateCalming(getDogName());
 
-    // 3. Generate TTS for each phrase
-    // fixme; this boy is broken :(
+    // 2. Generate TTS for each phrase
     const generated = [];
+    let lastError = '';
+    
     for (const phrase of phrasesToGen) {
-      const ttsResp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice_id}`, {
-        method: 'POST',
-        headers: { 'xi-api-key': key, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: phrase,
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: {
-            stability: 0.6 + Math.random() * 0.2,
-            similarity_boost: 0.8,
-            style: 0.3,
-            use_speaker_boost: true
-          }
-        })
-      });
-      if (!ttsResp.ok) continue;
-      const blob = await ttsResp.blob();
+      console.log(`Generating TTS for: ${phrase} using ${provider}`);
+      let blob;
+      
+      if (provider === 'eleven') {
+        const key = document.getElementById('elevenKey').value.trim();
+        const voice_id = document.getElementById('elevenVoiceId').value.trim();
+        if (!key || !voice_id) throw new Error('ElevenLabs key and Voice ID are required');
+        
+        const ttsResp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice_id}`, {
+          method: 'POST',
+          headers: { 'xi-api-key': key, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: phrase,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+          })
+        });
+        
+        if (!ttsResp.ok) {
+          const errText = await ttsResp.text();
+          lastError = `Status ${ttsResp.status}: ${errText}`;
+          if (ttsResp.status === 401 || ttsResp.status === 404) throw new Error(`ElevenLabs API error (${ttsResp.status}): ${errText}`);
+          continue;
+        }
+        blob = await ttsResp.blob();
+      } else {
+        // Google Translate (Free) via our local proxy
+        const ttsResp = await fetch(`http://localhost:3747/tts-google?text=${encodeURIComponent(phrase)}`);
+        if (!ttsResp.ok) {
+          lastError = `Status ${ttsResp.status}: Google TTS failed`;
+          continue;
+        }
+        blob = await ttsResp.blob();
+      }
+      
       const url = URL.createObjectURL(blob);
       generated.push({ label: phrase, url, blob, isAI: true });
       cloneStatus.textContent = `generated ${generated.length}/${phrasesToGen.length}…`;
@@ -623,11 +754,47 @@ document.getElementById('cloneBtn').onclick = async () => {
     // Replace AI clips, keep manually recorded
     S.clips = S.clips.filter(c => !c.isAI).concat(generated);
     buildRecList();
-    cloneStatus.textContent = `✓ ${generated.length} phrases cloned`;
-    cloneStatus.className = 'phrase-tag ai';
+
+     // Save phrases and audio to server
+     try {
+       await fetch('http://localhost:3747/phrases', {
+         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dog: getDogName(),
+          phrases: generated.map(g => g.label)
+        })
+      });
+
+      for (const [i, clip] of generated.entries()) {
+        const reader = new FileReader();
+        const promise = new Promise((resolve) => {
+          reader.onloadend = async () => {
+            const base64data = reader.result.split(',')[1];
+            const filename = `${getDogName().replace(/\s+/g,'-')}-${S.clips.indexOf(clip)}.webm`;
+            await fetch('http://localhost:3747/audio', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ filename, data: base64data })
+            });
+            resolve();
+          };
+        });
+        reader.readAsDataURL(clip.blob);
+        await promise;
+      }
+    } catch(e) { console.error('Save phrases/audio failed', e); }
+
+    if (generated.length === 0) {
+      cloneStatus.textContent = `error: 0 phrases cloned. ${lastError ? 'Last error: ' + lastError : '(check console)'}`;
+      cloneStatus.className = 'phrase-tag';
+    } else {
+      cloneStatus.textContent = `ok: ${generated.length} phrases cloned`;
+      cloneStatus.className = 'phrase-tag ai';
+    }
   } catch(err) {
     console.error(err);
-    cloneStatus.textContent = '✗ ' + err.message;
+    cloneStatus.textContent = 'error: ' + err.message;
     cloneStatus.className = 'phrase-tag';
   }
 };
@@ -648,10 +815,10 @@ function generateCalming(name) {
 }
 
 // SLIDERS
-document.getElementById('threshSlider').oninput = function() { document.getElementById('threshVal').textContent = this.value; };
-document.getElementById('volSlider').oninput    = function() { document.getElementById('volVal').textContent = this.value + '%'; };
-document.getElementById('oscSlider').oninput    = function() { document.getElementById('oscVal').textContent = this.value; };
-document.getElementById('coolSlider').oninput   = function() { document.getElementById('coolVal').textContent = this.value + 's'; };
+document.getElementById('threshSlider').addEventListener('input', function() { document.getElementById('threshVal').textContent = this.value; });
+document.getElementById('volSlider').addEventListener('input', function() { document.getElementById('volVal').textContent = this.value + '%'; });
+document.getElementById('oscSlider').addEventListener('input', function() { document.getElementById('oscVal').textContent = this.value; });
+document.getElementById('coolSlider').addEventListener('input', function() { document.getElementById('coolVal').textContent = this.value + 's'; });
 
 // LISTEN
 document.getElementById('listenBtn').onclick = async () => {
@@ -672,7 +839,7 @@ async function startListening() {
   S.listening = true;
   S.sessionBarks = 0;
   S.lastBarkTime = null;
-  document.getElementById('listenBtn').textContent = '⏹ stop listening';
+  document.getElementById('listenBtn').textContent = 'stop listening';
   setDot('active');
   document.getElementById('statusText').textContent = 'listening…';
   loop();
@@ -683,7 +850,7 @@ function stopListening() {
   if (S.animId) cancelAnimationFrame(S.animId);
   if (S.micStream) S.micStream.getTracks().forEach(t => t.stop());
   if (S.audioCtx) { S.audioCtx.close(); S.audioCtx = null; }
-  document.getElementById('listenBtn').textContent = '▶ start listening';
+  document.getElementById('listenBtn').textContent = 'start listening';
   setDot('');
   document.getElementById('statusText').textContent = 'stopped';
   document.getElementById('meterBar').style.width = '0%';
@@ -788,7 +955,11 @@ async function triggerResponse(level, thresh) {
   document.getElementById('barkFlash').className = 'bark-flash show';
 
   const recorded = S.clips.filter(c => c.url);
-  if (!recorded.length) { resetCooldown(); return; }
+  if (!recorded.length) {
+    alert('No playable audio found for phrases. Please record your voice or use "clone voice" to generate AI audio.');
+    resetCooldown();
+    return;
+  }
 
   const { clip, key } = banditPickClip(recorded);
   const pitch = getPitch();
@@ -1056,7 +1227,7 @@ function buildPayload(label) {
 document.getElementById('sendNowBtn').onclick = async () => {
   try {
     const ok = await sendToLocalServer(buildPayload('manual'));
-    alert(ok ? '✓ Report sent!' : '✗ Server error — is node server.js running?');
+    alert(ok ? 'Report sent!' : 'Server error — is node server.js running?');
   } catch(e) {
     alert('Cannot reach local server. Run: node server.js');
   }
@@ -1135,10 +1306,18 @@ function updateSmsCountdown() {
 }
 
 // INIT
-buildRecList();
-updateLogUI();
-updateBanditUI();
-updateNotifyBtns();
+async function startup() {
+  await initLog();
+  loadConfig();
+  loadPhrases();
+  updateTitle();
+  buildRecList();
+  updateLogUI();
+  updateBanditUI();
+  updateNotifyBtns();
+}
+
+startup();
 window.addEventListener('resize', drawChart);
 </script>
 </body>

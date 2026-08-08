@@ -17,13 +17,13 @@ node server.js &
 SERVER_PID=$!
 
 sleep 1
-echo "Opening index.html..."
+echo "Opening app at http://localhost:3747..."
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  open index.html
+  open "http://localhost:3747"
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-  xdg-open index.html >/dev/null 2>&1 || sensible-browser index.html
+  xdg-open "http://localhost:3747" >/dev/null 2>&1 || sensible-browser "http://localhost:3747"
 elif [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* || "$OSTYPE" == "win32" ]]; then
-  start index.html
+  start "http://localhost:3747"
 else
   echo "Could not detect OS. Please open index.html manually."
 fi
