@@ -4,3 +4,5 @@ package*.json
 .env
 phrases.json
 charts/
+data/
+dog-data/
