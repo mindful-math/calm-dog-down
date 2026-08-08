@@ -1,4 +1,4 @@
-# dog-calm-down
+# calm-dog-down
 
 Detects your dog barking via microphone, plays back your recorded (or AI-cloned) voice. Adapts which phrase to use based on what quiets them fastest.
 
@@ -26,22 +26,13 @@ Detects your dog barking via microphone, plays back your recorded (or AI-cloned)
 npm install nodemailer twilio
 ```
 
-Edit the SMTP block at the top of `src/server.js`:
-
-```js
-const SMTP = {
-  auth: {
-    user: 'you@gmail.com',
-    pass: 'your-16-char-app-password',  // NOT your Gmail password
-  },
-};
-```
-
-Or use environment variables:
+The server uses environment variables for configuration. You can provide them directly in the command line:
 
 ```bash
 SMTP_USER=you@gmail.com SMTP_PASS=xxxx node src/server.js
 ```
+
+Or, more conveniently, create a `.env` file in the root directory (see **Env Vars** section below).
 
 ### Docker
 Alternatively, run the server using Docker:
@@ -84,7 +75,7 @@ Use *export chart png* to download the bark chart as a PNG at any time.
 ```
 src/index.html   — the full browser app
 src/server.js    — local Node server (email + SMS)
-charts/          — chart PNGs saved at each report (created automatically)
+src/data/        — local storage for phrases, audio clips, and charts
 ```
 
 ## Privacy
