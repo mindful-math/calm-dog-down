@@ -49,8 +49,8 @@ function buildHtmlEmail(data) {
       <td>${e.id}</td>
       <td>${new Date(e.timestamp).toLocaleTimeString()}</td>
       <td>${e.level}</td>
-      <td>${e.pitch ? e.pitch + ' Hz' : '—'}</td>
-      <td>${e.gap ? e.gap + 's' : '—'}</td>
+    <td>${e.pitch ? e.pitch + ' Hz' : '-'}</td>
+    <td>${e.gap ? e.gap + 's' : '-'}</td>
       <td>${e.phrase}</td>
     </tr>`).join('');
 
@@ -73,7 +73,7 @@ function buildHtmlEmail(data) {
 </style>
 </head>
 <body>
-<h1>${data.dog === 'your dog' ? 'Dog' : data.dog} calm down report</h1>
+  <h1>${data.dog === 'your dog' ? 'Dog' : data.dog} calm down report</h1>
 <p class="sub">${data.label} · ${new Date(data.timestamp).toLocaleString()}</p>
 <div class="stats">
   <div class="stat"><div class="num">${data.totalBarks}</div><div class="lbl">Total barks</div></div>
@@ -111,7 +111,7 @@ async function handleReport(data) {
         await transporter.sendMail({
           from: SMTP.auth.user,
           to: data.to,
-          subject: `${dog} bark report — ${new Date().toLocaleTimeString()}`,
+          subject: `${dog} bark report - ${new Date().toLocaleTimeString()}`,
           html,
           attachments: data.chartPng ? [{
             filename: 'bark-chart.png',

@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "nodemailer": "8.0.4",
+    "twilio": "5.13.1",
+    "dotenv": "16.4.5",
+    "ai": "latest",
+    "@ai-sdk/groq": "latest"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:log": "bash scripts/run-tests.sh"
+  }
+}

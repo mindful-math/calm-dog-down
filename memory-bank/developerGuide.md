@@ -64,7 +64,7 @@ docker run --rm dog-calm-down npm test
 ```
 
 ### Test History
-Test results are persisted in `tests.log` when using the `test:log` script. This file contains timestamps, full output, and a final PASS/FAIL status for each run.
+Test results are persisted in `tests.log` when using the `test:log` script. This file is git-ignored and contains timestamps, full output, and a final PASS/FAIL status for each run.
 
 ## Coding Standards
 

@@ -1,4 +1,4 @@
-const { banditPickClip, banditReward } = require('./bandit');
+const { banditPickClip, banditReward } = require('../src/bandit');
 
 describe('Bandit Logic', () => {
   const clips = [{ label: 'A' }, { label: 'B' }, { label: 'C' }];

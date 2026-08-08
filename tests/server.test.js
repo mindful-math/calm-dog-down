@@ -1,4 +1,4 @@
-const { requestHandler } = require('./server');
+const { requestHandler } = require('../src/server');
 const http = require('http');
 const EventEmitter = require('events');
 const fs = require('fs');

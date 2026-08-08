@@ -1,8 +1,8 @@
 charts*
 node_modules*
-package*.json
 .env
 phrases.json
 charts/
 data/
 dog-data/
+tests.log

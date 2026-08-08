@@ -190,7 +190,7 @@ tr:last-child td { border-bottom: none; }
 
 <header>
   <div class="dog-name-display" id="titleEl">Dog <em>calm down</em></div>
-  <p class="sub" id="subEl">record phrases · ai voices · adaptive playback · bark analytics</p>
+  <p class="sub" id="subEl">record phrases - ai voices - adaptive playback - bark analytics</p>
   <div class="row" style="margin-top:14px; gap:8px;">
     <label style="font-size:12px; font-family:'DM Mono',monospace;">dog's name:</label>
     <input type="text" id="dogNameInput" placeholder="e.g. Cooper" maxlength="30" style="width:160px;">
@@ -199,7 +199,7 @@ tr:last-child td { border-bottom: none; }
 
 <!-- ── VOICE SETUP ── -->
 <div class="card">
-  <div class="card-title">Step 1 — voice setup</div>
+  <div class="card-title">Step 1 - voice setup</div>
 
   <div class="tab-row">
     <button class="tab on" data-tab="record">record phrases</button>
@@ -211,7 +211,7 @@ tr:last-child td { border-bottom: none; }
     <div id="recList"></div>
     <div class="row" style="margin-top:10px;">
       <button id="addBtn">+ add phrase</button>
-      <span style="font-size:11px; color:var(--muted); font-family:'DM Mono',monospace;">type phrase → record → repeat</span>
+      <span style="font-size:11px; color:var(--muted); font-family:'DM Mono',monospace;">type phrase -> record -> repeat</span>
     </div>
   </div>
 
@@ -258,7 +258,7 @@ tr:last-child td { border-bottom: none; }
 
 <!-- ── SETTINGS ── -->
 <div class="card">
-  <div class="card-title">Step 2 — sensitivity &amp; response</div>
+  <div class="card-title">Step 2 - sensitivity & response</div>
   <div class="slider-row">
     <label>bark threshold</label>
     <input type="range" min="5" max="80" value="30" id="threshSlider">
@@ -283,9 +283,9 @@ tr:last-child td { border-bottom: none; }
 
 <!-- ── LISTEN ── -->
 <div class="card">
-  <div class="card-title">Step 3 — listen</div>
+  <div class="card-title">Step 3 - listen</div>
   <div class="meter-wrap"><div class="meter-bar" id="meterBar"></div></div>
-  <div class="meter-label" id="meterLabel">mic level: —</div>
+  <div class="meter-label" id="meterLabel">mic level: -</div>
   <div class="row" style="margin-top:12px;">
     <button class="primary" id="listenBtn">start listening</button>
     <div class="status-row">
@@ -298,13 +298,13 @@ tr:last-child td { border-bottom: none; }
 
 <!-- ── BARK LOG ── -->
 <div class="card">
-  <div class="card-title">Bark log &amp; analytics</div>
+  <div class="card-title">Bark log & analytics</div>
 
   <div class="stat-grid">
     <div class="stat-box"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">total barks</div></div>
     <div class="stat-box"><div class="stat-num" id="statSession">0</div><div class="stat-lbl">session barks</div></div>
-    <div class="stat-box"><div class="stat-num" id="statAvgLevel">—</div><div class="stat-lbl">average level</div></div>
-    <div class="stat-box"><div class="stat-num" id="statAvgGap">—</div><div class="stat-lbl">average gap (s)</div></div>
+    <div class="stat-box"><div class="stat-num" id="statAvgLevel">-</div><div class="stat-lbl">average level</div></div>
+    <div class="stat-box"><div class="stat-num" id="statAvgGap">-</div><div class="stat-lbl">average gap (s)</div></div>
   </div>
 
   <canvas id="barkChart" height="140"></canvas>
@@ -315,7 +315,7 @@ tr:last-child td { border-bottom: none; }
   </div>
 
   <div class="log-table-wrap" style="margin-top:10px;">
-    <div style="font-size:12px; color:var(--muted); text-align:center; padding:20px 0;" id="emptyLog">no barks yet — start listening</div>
+    <div style="font-size:12px; color:var(--muted); text-align:center; padding:20px 0;" id="emptyLog">no barks yet - start listening</div>
     <table id="logTable" style="display:none;">
       <thead><tr><th>#</th><th>time</th><th>level</th><th>pitch</th><th>gap (s)</th><th>phrase</th><th>effect</th></tr></thead>
       <tbody id="logBody"></tbody>
@@ -332,7 +332,7 @@ tr:last-child td { border-bottom: none; }
 
 <!-- ── NOTIFICATIONS ── -->
 <div class="card">
-  <div class="card-title">Notifications &amp; reports</div>
+  <div class="card-title">Notifications & reports</div>
 
   <div class="notify-method">
     <button class="method-btn on" data-method="local" id="methodLocal">local server</button>
@@ -428,6 +428,14 @@ async function initLog() {
     if (confirm('Found cached bark history. Load it?')) {
       try {
         barkLog = JSON.parse(cached);
+        // Restore dog name from the last log entry if not already set
+        if (barkLog.length > 0) {
+          const lastEntry = barkLog[barkLog.length - 1];
+          if (lastEntry.dog && !localStorage.getItem('dogName')) {
+            dogNameInput.value = lastEntry.dog;
+            localStorage.setItem('dogName', lastEntry.dog);
+          }
+        }
       } catch(e) {
         console.error('Failed to parse cache', e);
       }
@@ -438,6 +446,16 @@ async function initLog() {
 // Restore bandit state
 try { S.bandit = JSON.parse(localStorage.getItem('banditState') || '{}'); } catch(e) {}
 function saveBandit() { try { localStorage.setItem('banditState', JSON.stringify(S.bandit)); } catch(e) {} }
+
+// UTILS
+function hashPhrase(phrase) {
+  let hash = 0;
+  for (let i = 0; i < phrase.length; i++) {
+    hash = ((hash << 5) - hash) + phrase.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
 
 // DOG NAME
 const dogNameInput = document.getElementById('dogNameInput');
@@ -450,6 +468,7 @@ function updateTitle() {
 }
 
 dogNameInput.addEventListener('input', async () => {
+  localStorage.setItem('dogName', dogNameInput.value.trim());
   updateTitle();
   await loadPhrases();
 });
@@ -492,7 +511,7 @@ function buildRecList() {
     txt.addEventListener('input', () => { S.clips[i].label = txt.textContent.trim(); });
     const tag = document.createElement('span');
     tag.className = 'phrase-tag' + (clip.url ? (clip.isAI ? ' ai' : ' ok') : '');
-    tag.textContent = clip.url ? (clip.isAI ? 'ai' : 'rec') : '—';
+    tag.textContent = clip.url ? (clip.isAI ? 'ai' : 'rec') : '-';
     const score = S.bandit[i];
     const meta = document.createElement('span');
     meta.className = 'phrase-meta';
@@ -556,7 +575,7 @@ async function toggleRecord(i) {
       reader.readAsDataURL(blob);
       reader.onloadend = async () => {
         const base64data = reader.result.split(',')[1];
-        const filename = `${getDogName().replace(/\s+/g,'-')}-${i}.webm`;
+        const filename = `${getDogName().replace(/\s+/g,'-')}-${hashPhrase(S.clips[i].label)}.webm`;
         await fetch('http://localhost:3747/audio', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -634,8 +653,25 @@ window.addEventListener('DOMContentLoaded', () => {
     elevenVoiceRow.style.display = isEleven ? 'flex' : 'none';
   };
   
-  providerSelect.addEventListener('change', updateProviderUI);
+  providerSelect.addEventListener('change', () => {
+    updateProviderUI();
+    saveVoiceSettings();
+  });
   updateProviderUI();
+});
+
+function saveVoiceSettings() {
+  const settings = {
+    provider: document.getElementById('ttsProvider').value,
+    key: document.getElementById('elevenKey').value.trim(),
+    voiceId: document.getElementById('elevenVoiceId').value.trim(),
+  };
+  localStorage.setItem('voiceSettings', JSON.stringify(settings));
+}
+
+// Auto-save keys on input
+['elevenKey', 'elevenVoiceId'].forEach(id => {
+  document.getElementById(id).addEventListener('input', saveVoiceSettings);
 });
 
 async function loadPhrases() {
@@ -655,7 +691,7 @@ async function loadPhrases() {
           }
           
           // Try to load corresponding audio from server
-          const filename = `${name.replace(/\s+/g,'-')}-${S.clips.indexOf(clip)}.webm`;
+          const filename = `${name.replace(/\s+/g,'-')}-${hashPhrase(p)}.webm`;
           const audioR = await fetch(`http://localhost:3747/audio?filename=${encodeURIComponent(filename)}`);
           if (audioR.ok) {
             const blob = await audioR.blob();
@@ -771,7 +807,7 @@ document.getElementById('cloneBtn').onclick = async () => {
         const promise = new Promise((resolve) => {
           reader.onloadend = async () => {
             const base64data = reader.result.split(',')[1];
-            const filename = `${getDogName().replace(/\s+/g,'-')}-${S.clips.indexOf(clip)}.webm`;
+            const filename = `${getDogName().replace(/\s+/g,'-')}-${hashPhrase(clip.label)}.webm`;
             await fetch('http://localhost:3747/audio', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -854,7 +890,7 @@ function stopListening() {
   setDot('');
   document.getElementById('statusText').textContent = 'stopped';
   document.getElementById('meterBar').style.width = '0%';
-  document.getElementById('meterLabel').textContent = 'mic level: —';
+  document.getElementById('meterLabel').textContent = 'mic level: -';
   document.getElementById('barkFlash').className = 'bark-flash';
 }
 
@@ -973,6 +1009,7 @@ async function triggerResponse(level, thresh) {
   const entry = {
     id: barkLog.length + 1,
     timestamp: new Date().toISOString(),
+    dog: getDogName(),
     level: Math.round(level),
     pitch,
     gap: gap ? gap.toFixed(1) : null,
@@ -1028,10 +1065,10 @@ function updateLogUI() {
   document.getElementById('statSession').textContent = S.sessionBarks;
   const levels = barkLog.map(e => e.level);
   document.getElementById('statAvgLevel').textContent =
-    levels.length ? Math.round(levels.reduce((a,b)=>a+b,0)/levels.length) : '—';
+    levels.length ? Math.round(levels.reduce((a,b)=>a+b,0)/levels.length) : '-';
   const gaps = barkLog.map(e => parseFloat(e.gap)).filter(n => !isNaN(n));
   document.getElementById('statAvgGap').textContent =
-    gaps.length ? (gaps.reduce((a,b)=>a+b,0)/gaps.length).toFixed(0) : '—';
+    gaps.length ? (gaps.reduce((a,b)=>a+b,0)/gaps.length).toFixed(0) : '-';
 
   const hasData = barkLog.length > 0;
   document.getElementById('emptyLog').style.display = hasData ? 'none' : 'block';
@@ -1043,8 +1080,8 @@ function updateLogUI() {
   tbody.innerHTML = '';
   barkLog.slice(-60).reverse().forEach(e => {
     const tr = document.createElement('tr');
-    const eff = e.gap ? `${e.gap}s` : '—';
-    tr.innerHTML = `<td>${e.id}</td><td>${new Date(e.timestamp).toLocaleTimeString()}</td><td>${e.level}</td><td>${e.pitch ? e.pitch+'Hz' : '—'}</td><td>${e.gap || '—'}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${e.phrase}">${e.phrase}</td><td>${eff}</td>`;
+    const eff = e.gap ? `${e.gap}s` : '-';
+    tr.innerHTML = `<td>${e.id}</td><td>${new Date(e.timestamp).toLocaleTimeString()}</td><td>${e.level}</td><td>${e.pitch ? e.pitch+'Hz' : '-'}</td><td>${e.gap || '-'}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${e.phrase}">${e.phrase}</td><td>${eff}</td>`;
     tbody.appendChild(tr);
   });
 
@@ -1058,8 +1095,16 @@ function updateBanditUI() {
   document.getElementById('banditWrap').style.display = '';
   const container = document.getElementById('banditBars');
   container.innerHTML = '';
+
+  // Sort clips by score descending for "Most Effective" view
+  const sorted = [...recorded].sort((a, b) => {
+    const scoreA = S.bandit[S.clips.indexOf(a)]?.score || 0;
+    const scoreB = S.bandit[S.clips.indexOf(b)]?.score || 0;
+    return scoreB - scoreA;
+  });
+
   const maxScore = Math.max(1, ...Object.values(S.bandit).map(e => e.score));
-  recorded.forEach(clip => {
+  sorted.forEach(clip => {
     const k = S.clips.indexOf(clip);
     const e = S.bandit[k] || { plays: 0, score: 0 };
     const pct = Math.min(100, (e.score / maxScore) * 100);
@@ -1067,7 +1112,7 @@ function updateBanditUI() {
     row.className = 'bandit-phrase';
     row.innerHTML = `<span class="bandit-label" title="${clip.label}">${clip.label}</span>
       <div class="bandit-bar-wrap"><div class="bandit-bar" style="width:${pct}%"></div></div>
-      <span class="bandit-score">${e.score ? e.score.toFixed(0)+'s' : '—'}</span>`;
+      <span class="bandit-score">${e.score ? e.score.toFixed(0)+'s' : '-'}</span>`;
     container.appendChild(row);
   });
 }
@@ -1145,7 +1190,7 @@ function drawChart() {
     c.fillText(new Date(show[show.length-1].timestamp).toLocaleTimeString(), W - padR, H - 4);
   }
   c.fillStyle = '#00FFFF'; c.textAlign = 'center';
-  c.fillText('— gap between barks (s)', W / 2, H - 4);
+  c.fillText('- gap between barks (s)', W / 2, H - 4);
 }
 
 // EXPORT
@@ -1307,9 +1352,20 @@ function updateSmsCountdown() {
 
 // INIT
 async function startup() {
+  // Restore persisted settings
+  const savedName = localStorage.getItem('dogName');
+  if (savedName) {
+    dogNameInput.value = savedName;
+  }
+
+  const savedVoice = JSON.parse(localStorage.getItem('voiceSettings') || '{}');
+  if (savedVoice.provider) document.getElementById('ttsProvider').value = savedVoice.provider;
+  if (savedVoice.key) document.getElementById('elevenKey').value = savedVoice.key;
+  if (savedVoice.voiceId) document.getElementById('elevenVoiceId').value = savedVoice.voiceId;
+
   await initLog();
   loadConfig();
-  loadPhrases();
+  await loadPhrases();
   updateTitle();
   buildRecList();
   updateLogUI();

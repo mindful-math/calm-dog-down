@@ -26,7 +26,7 @@ Detects your dog barking via microphone, plays back your recorded (or AI-cloned)
 npm install nodemailer twilio
 ```
 
-Edit the SMTP block at the top of `server.js`:
+Edit the SMTP block at the top of `src/server.js`:
 
 ```js
 const SMTP = {
@@ -40,7 +40,7 @@ const SMTP = {
 Or use environment variables:
 
 ```bash
-SMTP_USER=you@gmail.com SMTP_PASS=xxxx node server.js
+SMTP_USER=you@gmail.com SMTP_PASS=xxxx node src/server.js
 ```
 
 ### Docker
@@ -82,9 +82,9 @@ Use *export chart png* to download the bark chart as a PNG at any time.
 ## File overview
 
 ```
-index.html   — the full browser app
-server.js    — local Node server (email + SMS)
-charts/      — chart PNGs saved at each report (created automatically)
+src/index.html   — the full browser app
+src/server.js    — local Node server (email + SMS)
+charts/          — chart PNGs saved at each report (created automatically)
 ```
 
 ## Privacy
@@ -92,3 +92,37 @@ charts/      — chart PNGs saved at each report (created automatically)
 - ElevenLabs and Twilio credentials are **never stored** (in-memory only, cleared on page reload).
 - The bark log is saved to `localStorage` in your browser only. You will be prompted to load this cache when you start the app.
 - All audio stays on your device; no audio is uploaded except the voice sample to ElevenLabs when you explicitly click *clone + generate*.
+
+## Env Vars
+
+This project uses environment variables to manage sensitive keys and configuration. These should be defined in a `.env` file in the root directory.
+
+### Required Variables
+
+| Variable | Purpose | Description |
+| :--- | :--- | :--- |
+| `SMTP_USER` | Email Reports | The email address used to send reports (e.g., your Gmail address). |
+| `SMTP_PASS` | Email Reports | The app-specific password for the SMTP user. |
+
+### Optional Variables
+
+| Variable | Default | Purpose | Description |
+| :--- | :--- | :--- | :--- |
+| `ELEVEN_LABS_KEY` | `""` | TTS & Voice Cloning | Required only if using ElevenLabs for AI voice cloning/TTS instead of local recordings. |
+| `GROQ_API_KEY` | `""` | Phrase Suggestion | Required only if using Groq for AI-generated phrase suggestions. |
+| `VOICE_ID` | `""` | Default Voice | The ElevenLabs Voice ID to be pre-populated in the UI. |
+| `SMTP_HOST` | `smtp.gmail.com` | Email Server | The hostname of the SMTP server. |
+| `SMTP_PORT` | `587` | Email Port | The port of the SMTP server. |
+
+### Setup Instructions
+
+1. Create a `.env` file in the root directory.
+2. Add the required variables:
+   ```env
+   ELEVEN_LABS_KEY=your_elevenlabs_key
+   GROQ_API_KEY=your_groq_key
+   SMTP_USER=your_email@gmail.com
+   SMTP_PASS=your_app_password
+   VOICE_ID=your_voice_id
+   ```
+3. If using Gmail, ensure you have 2FA enabled and use an **App Password** instead of your primary password.

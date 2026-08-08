@@ -13,7 +13,7 @@ if [ ! -d "node_modules" ]; then
 fi
 
 echo "Starting server..."
-node server.js &
+node src/server.js &
 SERVER_PID=$!
 
 sleep 1
